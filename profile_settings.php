@@ -7,8 +7,27 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
+function addLog($conn, $message) {
+    // Use prepared statement to prevent SQL injection and handle special characters
+    $stmt = $conn->prepare("INSERT INTO logs (log_message) VALUES (?)");
+    if ($stmt === false) {
+        // Error preparing the statement
+        die('Error preparing statement: ' . $conn->error);
+    }
 
+    // Bind parameters securely
+    $stmt->bind_param("s", $message);
+
+    // Execute the query
+    if (!$stmt->execute()) {
+        die('Error executing query: ' . $stmt->error);
+    }
+
+    // Close the statement
+    $stmt->close();
+}
 $user_id = $_SESSION['user_id'];
+$username = isset($_SESSION['username']) ? $conn->real_escape_string($_SESSION['username']) : 'Unknown';
 $message = "";
 
 // Handle form submission
@@ -16,14 +35,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Update username
     if (!empty($_POST['username'])) {
         $new_username = $conn->real_escape_string($_POST['username']);
-        $conn->query("UPDATE users SET username = '$new_username' WHERE id = $user_id");
-        $_SESSION['username'] = $new_username;
+        if ($new_username !== $_SESSION['username']) {
+            $conn->query("UPDATE users SET username = '$new_username' WHERE id = $user_id");
+            addLog($conn, "INSERT INTO logs (log_message) VALUES ('User \"$username\" changed username to \"$new_username\"')");
+            $_SESSION['username'] = $new_username;
+        }
     }
 
     // Update password
     if (!empty($_POST['password'])) {
         $new_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
         $conn->query("UPDATE users SET password = '$new_password' WHERE id = $user_id");
+        addLog($conn, "INSERT INTO logs (log_message) VALUES ('User \"$username\" updated their password')");
     }
 
     // Upload profile picture
@@ -41,6 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (in_array($imageFileType, $allowed_types)) {
             if (move_uploaded_file($_FILES["profile_picture"]["tmp_name"], $target_file)) {
                 $conn->query("UPDATE users SET profile_path = '$target_file' WHERE id = $user_id");
+                addLog($conn, "INSERT INTO logs (log_message) VALUES ('User \"$username\" updated their profile picture')");
             } else {
                 $message = "Error uploading the profile picture.";
             }
@@ -68,7 +92,7 @@ $user = $result->fetch_assoc();
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>IT BDSI - Item Manager</title>
+    <title>IT BDSI - Profile Settings</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -330,20 +354,20 @@ $user = $result->fetch_assoc();
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="profile_settings.php">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Profile
                                 </a>
-                                <a class="dropdown-item" href="profile_settings.php">
+                                <a class="dropdown-item" href="settings.php">
                                     <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Settings
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="activity_log.php">
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Activity Log
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="logout.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -359,13 +383,13 @@ $user = $result->fetch_assoc();
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">Item List in our inventory in and out</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800">BDSI IT Inventory</h1>
+                    <p class="mb-4">Profile Settings</a>.</p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Table</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Modify the profile as you wish!</h6>
                         </div>
                         <div class="card-body">
                             <h5 class="card-title">Profile Settings</h5>
@@ -377,23 +401,23 @@ $user = $result->fetch_assoc();
                             <form method="post" enctype="multipart/form-data">
                                 <div class="mb-3">
                                     <label for="username" class="form-label">Username</label>
-                                    <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($user['username']); ?>">
+                                    <input class="form-control bg-light border-0 small" type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($user['username']); ?>">
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="password" class="form-label">New Password (leave blank to keep current)</label>
-                                    <input type="password" name="password" class="form-control">
+                                    <input class="form-control bg-light border-0 small" type="password" name="password" class="form-control">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="profile_picture" class="form-label">Profile Picture</label><br>
+                                    <label  for="profile_picture" class="form-label">Profile Picture</label><br>
                                     <?php if (!empty($user['profile_path'])): ?>
                                         <img src="<?php echo $user['profile_path']; ?>" alt="Profile Picture" style="width: 100px; height: auto; border-radius: 50%; margin-bottom: 10px;">
                                     <?php endif; ?>
-                                    <input type="file" name="profile_picture" class="form-control">
+                                    <input class="form-control bg-light border-0 small" type="file" name="profile_picture" class="form-control">
                                 </div>
 
-                                <button type="submit" class="btn btn-primary">Update Profile</button>
+                                <button class="btn btn-primary" type="submit" class="btn btn-primary">Update Profile</button>
                             </form>
                         </div>
                     </div>

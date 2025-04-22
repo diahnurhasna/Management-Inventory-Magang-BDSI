@@ -1,45 +1,78 @@
 <?php
 session_start();
 require 'db.php';
+function addLog($conn, $message) {
+  // Use prepared statement to prevent SQL injection and handle special characters
+  $stmt = $conn->prepare("INSERT INTO logs (log_message) VALUES (?)");
+  if ($stmt === false) {
+      // Error preparing the statement
+      die('Error preparing statement: ' . $conn->error);
+  }
 
+  // Bind parameters securely
+  $stmt->bind_param("s", $message);
+
+  // Execute the query
+  if (!$stmt->execute()) {
+      die('Error executing query: ' . $stmt->error);
+  }
+
+  // Close the statement
+  $stmt->close();
+}
 if (isset($_SESSION['user_id'])) {
   header("Location: dashboard.php");
   exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = trim($_POST['username']);
-    $password = trim($_POST['password']);
-    $errors = [];
+  $username = trim($_POST['username']);
+  $password = trim($_POST['password']);
+  $errors = [];
 
-    // Validate input
-    if (empty($username)) {
-        $errors['username'] = 'Username is required.';
-    }
-    if (empty($password)) {
-        $errors['password'] = 'Password is required.';
-    }
+  // Validate input
+  if (empty($username)) {
+      $errors['username'] = 'Username is required.';
+  }
+  if (empty($password)) {
+      $errors['password'] = 'Password is required.';
+  }
 
-    // If no errors, check credentials
-    if (empty($errors)) {
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            $user = $result->fetch_assoc();
-            if (password_verify($password, $user['password'])) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['username'];
-                header("Location: dashboard.php");
-                exit();
-            } else {
-                $errors['password'] = 'Invalid password.';
-            }
-        } else {
-            $errors['username'] = 'No user found with that username.';
-        }
-    }
+  // If no errors, check credentials
+  if (empty($errors)) {
+      $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+      $stmt->bind_param("s", $username);
+      $stmt->execute();
+      $result = $stmt->get_result();
+
+      if ($result->num_rows > 0) {
+          $user = $result->fetch_assoc();
+          if (password_verify($password, $user['password'])) {
+              $_SESSION['user_id'] = $user['id'];
+              $_SESSION['username'] = $user['username'];
+              $_SESSION['profile'] = $user['profile_path'];
+              $_SESSION['email'] = $user['email'];
+
+              // ✅ Log successful login
+              $log_msg = "User '{$username}' successfully logged in.";
+              addLog($conn, $log_msg);
+
+              header("Location: dashboard.php");
+              exit();
+          } else {
+              $errors['password'] = 'Invalid password.';
+
+              // ❌ Log failed login (wrong password)
+              $log_msg = "Failed login for user '{$username}': invalid password.";
+              addLog($conn, $log_msg);          }
+      } else {
+          $errors['username'] = 'No user found with that username.';
+
+          // ❌ Log failed login (no user)
+          $log_msg = "Failed login: no user found with username '{$username}'.";
+          addLog($conn, $log_msg);
+      }
+  }
 }
 ?>
 

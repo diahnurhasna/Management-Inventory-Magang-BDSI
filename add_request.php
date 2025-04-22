@@ -1,7 +1,25 @@
 <?php
 session_start();
 require 'db.php';
+function addLog($conn, $message) {
+    // Use prepared statement to prevent SQL injection and handle special characters
+    $stmt = $conn->prepare("INSERT INTO logs (log_message) VALUES (?)");
+    if ($stmt === false) {
+        // Error preparing the statement
+        die('Error preparing statement: ' . $conn->error);
+    }
 
+    // Bind parameters securely
+    $stmt->bind_param("s", $message);
+
+    // Execute the query
+    if (!$stmt->execute()) {
+        die('Error executing query: ' . $stmt->error);
+    }
+
+    // Close the statement
+    $stmt->close();
+}
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -21,13 +39,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['item'] = 'Item is required.';
     }
 
-    var_dump(empty($errors));
-
     // If no errors, insert request into database
     if (empty($errors)) {
         $stmt = $conn->prepare("INSERT INTO material_request (requester_name, item) VALUES (?, ?)");
         $stmt->bind_param("ss", $requester_name, $item);
+        
         if ($stmt->execute()) {
+            // ✅ Log the action
+            $username = $conn->real_escape_string($_SESSION['username']);
+            $safe_item = $conn->real_escape_string($item);
+            $log_msg = "User '{$username}' submitted a material request for '{$safe_item}'.";
+            addLog($conn, $log_msg);
+
             header("Location: material_request.php");
             exit();
         } else {
@@ -36,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -48,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>IT BDSI - Material Requests</title>
+    <title>IT BDSI - Add Material Requests</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -312,16 +336,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Profile
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="settings.php">
                                     <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Settings
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="activity_log.php">
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Activity Log
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="logout.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -343,7 +367,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Table</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">lets add Material request into our list!</h6>
                         </div>
                         <div class="card-body">
                             <form action="" method="post">

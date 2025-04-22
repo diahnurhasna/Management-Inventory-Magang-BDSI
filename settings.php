@@ -1,78 +1,67 @@
 <?php
-session_start();
-require 'db.php'; // Include your database connection file
+include 'db.php'; // DB connection
+session_start();  // Start session to get username if available
+
+$message = "";
 function addLog($conn, $message) {
+    // Use prepared statement to prevent SQL injection and handle special characters
     $stmt = $conn->prepare("INSERT INTO logs (log_message) VALUES (?)");
+    if ($stmt === false) {
+        // Error preparing the statement
+        die('Error preparing statement: ' . $conn->error);
+    }
+
+    // Bind parameters securely
     $stmt->bind_param("s", $message);
-    $stmt->execute();
+
+    // Execute the query
+    if (!$stmt->execute()) {
+        die('Error executing query: ' . $stmt->error);
+    }
+
+    // Close the statement
     $stmt->close();
 }
-// Check if the user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Settings toggle values
+    $enable_login = isset($_POST['enable_login']) ? 1 : 0;
+    $enable_register = isset($_POST['enable_register']) ? 1 : 0;
+    $enable_website = isset($_POST['enable_website']) ? 1 : 0;
+
+    // Update settings table
+    $sql = "UPDATE settings SET enable_login=?, enable_register=?, enable_website=? LIMIT 1";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iii", $enable_login, $enable_register, $enable_website);
+
+    if ($stmt->execute()) {
+        $message = "Settings updated successfully.";
+
+        // ✅ Log the settings update
+        $username = isset($_SESSION['username']) ? $conn->real_escape_string($_SESSION['username']) : 'Unknown';
+        $log_msg = "User '{$username}' updated system settings: login={$enable_login}, register={$enable_register}, website={$enable_website}";
+        addLog($conn, $log_msg);
+    } else {
+        $message = "Error updating settings: " . $conn->error;
+    }
+
+    $stmt->close();
 }
 
-$user_id = $_SESSION['user_id']; // Get the current user's ID
-$username = $_SESSION['username']; // Assuming you store username in session
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $item_id = intval($_POST['item_id']);
-    $status = trim($_POST['status']);
-    $taken_by = trim($_POST['taken_by']);
-    $errors = [];
-
-    // Validate input
-    if (empty($item_id)) {
-        $errors['item_id'] = 'Item ID is required.';
-    }
-
-    if ($status !== 'available' && $status !== 'taken') {
-        $errors['status'] = 'Invalid status.';
-    }
-
-    if ($status === 'taken' && empty($taken_by)) {
-        $errors['taken_by'] = 'Name of the person taking the item is required.';
-    }
-
-    // If there are no errors, proceed to update the item status
-    if (empty($errors)) {
-        // Prepare the SQL statement
-        if ($status === 'taken') {
-            $stmt = $conn->prepare("UPDATE inventory SET status = ?, taken_by = ?, taken_date = NOW() WHERE id = ?");
-            $stmt->bind_param("ssi", $status, $taken_by, $item_id);
-        } else {
-            $stmt = $conn->prepare("UPDATE inventory SET status = ?, taken_by = NULL WHERE id = ?");
-            $stmt->bind_param("si", $status, $item_id);
-        }
-
-        // Execute the statement
-        if ($stmt->execute()) {
-            // Log the action (who updated the item status and what the status is)
-            $log_message = "User \"$username\" updated item ID $item_id status to \"$status\" take by \"$taken_by\"";
-            addLog($conn, $log_message);
-
-            // Redirect to inventory dashboard or show success message
-            header("Location: item_manager.php?message=Item status updated successfully.");
-            exit();
-        } else {
-            $errors['database'] = 'Failed to update item status. Please try again.';
-        }
-    }
+// Fetch current settings
+$settings = [];
+$result = $conn->query("SELECT enable_login, enable_register, enable_website FROM settings LIMIT 1");
+if ($result && $result->num_rows > 0) {
+    $settings = $result->fetch_assoc();
 }
 
-// Fetch the item details for the form (optional)
-$item_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$item = null;
-
-if ($item_id > 0) {
-    $stmt = $conn->prepare("SELECT * FROM inventory WHERE id = ?");
-    $stmt->bind_param("i", $item_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $item = $result->fetch_assoc();
-}
+// Dummy user array for demo (replace with real user data)
+$user = [
+    'username' => 'admin',
+    'profile_path' => '' // or actual profile image path
+];
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -85,7 +74,7 @@ if ($item_id > 0) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>IT BDSI - Material Requests</title>
+    <title>IT BDSI - Settings</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -112,7 +101,7 @@ if ($item_id > 0) {
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="dashboard.php">
                 <div class="sidebar-brand-icon rotate-n-15">
-                   <!-- <i class="fas fa-laugh-wink"></i> -->
+                    <!-- <i class="fas fa-laugh-wink"></i> -->
                 </div>
                 <div class="sidebar-brand-text mx-3">BDSI IT <sup>inventory</sup></div>
             </a>
@@ -151,24 +140,7 @@ if ($item_id > 0) {
                 </div>
             </li>
 
-            <!-- Nav Item - Utilities Collapse Menu -->
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
-                    aria-expanded="true" aria-controls="collapseUtilities">
-                    <i class="fas fa-fw fa-wrench"></i>
-                    <span>Repair</span>
-                </a>
-                <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
-                    data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Custom Utilities:</h6>
-                        <a class="collapse-item" href="utilities-color.html">Colors</a>
-                        <a class="collapse-item" href="utilities-border.html">Borders</a>
-                        <a class="collapse-item" href="utilities-animation.html">Animations</a>
-                        <a class="collapse-item" href="utilities-other.html">Other</a>
-                    </div>
-                </div>
-            </li>
+            
             <!-- Sidebar Toggler (Sidebar) -->
             <div class="text-center d-none d-md-inline">
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
@@ -368,16 +340,16 @@ if ($item_id > 0) {
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Profile
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="settings.php">
                                     <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Settings
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="activity_log.php">
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Activity Log
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="logout.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -393,39 +365,51 @@ if ($item_id > 0) {
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Add Item</h1>
-                    <p class="mb-4">Adding item into inventory</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800">BDSI IT Inventory</h1>
+                    <p class="mb-4">Item List in our inventory in and out</a>.</p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Editing Item: <?php echo $item['item_name']; ?></h6>
+                            <h6 class="m-0 font-weight-bold text-primary">System Settings</h6>
                         </div>
                         <div class="card-body">
-                        <form action="update_item_status.php" method="post">
-                            <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">
-                            <div>
-                                <label for="status">Status:</label>
-                                <select class="form-control bg-light border-0 small" name="status" required>
-                                    <option value="available" <?php echo ($item['status'] === 'available') ? 'selected' : ''; ?>>Available</option>
-                                    <option value="taken" <?php echo ($item['status'] === 'taken') ? 'selected' : ''; ?>>Taken</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="taken_by">Taken By (if applicable):</label>
-                                <input class="form-control bg-light border-0 small" type="text" name="taken_by" value="<?php echo ($item['status'] === 'taken') ? $item['taken_by'] : ''; ?>">
-                            </div>
-                            <div>
-                                <button class="btn btn-primary" type="submit">Update Status</button>
-                            </div>
-                        </form>
+                        <div class="card-body">
+    <h5 class="card-title">Our System Settings</h5>
+
+    <?php if (!empty($message)): ?>
+        <div class="alert alert-info"><?php echo $message; ?></div>
+    <?php endif; ?>
+
+    <form method="post" enctype="multipart/form-data">
+
+        <!-- Settings Toggles -->
+        <hr>
+        <h6 class="mt-3">System Toggles</h6>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" name="enable_login" id="enable_login" value="1" <?php echo ($settings['enable_login'] ?? 0) ? 'checked' : ''; ?>>
+            <label class="form-check-label" for="enable_login">Enable Login</label>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" name="enable_register" id="enable_register" value="1" <?php echo ($settings['enable_register'] ?? 0) ? 'checked' : ''; ?>>
+            <label class="form-check-label" for="enable_register">Enable Register</label>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" name="enable_website" id="enable_website" value="1" <?php echo ($settings['enable_website'] ?? 0) ? 'checked' : ''; ?>>
+            <label class="form-check-label" for="enable_website">Enable Website</label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-success">Save Settings</button>
+    </form>
+</div>
                         </div>
                     </div>
-
-
                 </div>
                 <!-- /.container-fluid -->
-
             </div>
             <!-- End of Main Content -->
 
@@ -433,7 +417,7 @@ if ($item_id > 0) {
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                    <span>Copyright &copy; BDSI IT Department 2025</span>
+                        <span>Copyright &copy; BDSI IT Department 2025</span>
                     </div>
                 </div>
             </footer>

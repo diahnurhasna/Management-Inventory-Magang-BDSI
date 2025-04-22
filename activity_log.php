@@ -1,77 +1,15 @@
 <?php
 session_start();
-require 'db.php'; // Include your database connection file
-function addLog($conn, $message) {
-    $stmt = $conn->prepare("INSERT INTO logs (log_message) VALUES (?)");
-    $stmt->bind_param("s", $message);
-    $stmt->execute();
-    $stmt->close();
-}
-// Check if the user is logged in
+require 'db.php';
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
 
-$user_id = $_SESSION['user_id']; // Get the current user's ID
-$username = $_SESSION['username']; // Assuming you store username in session
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $item_id = intval($_POST['item_id']);
-    $status = trim($_POST['status']);
-    $taken_by = trim($_POST['taken_by']);
-    $errors = [];
-
-    // Validate input
-    if (empty($item_id)) {
-        $errors['item_id'] = 'Item ID is required.';
-    }
-
-    if ($status !== 'available' && $status !== 'taken') {
-        $errors['status'] = 'Invalid status.';
-    }
-
-    if ($status === 'taken' && empty($taken_by)) {
-        $errors['taken_by'] = 'Name of the person taking the item is required.';
-    }
-
-    // If there are no errors, proceed to update the item status
-    if (empty($errors)) {
-        // Prepare the SQL statement
-        if ($status === 'taken') {
-            $stmt = $conn->prepare("UPDATE inventory SET status = ?, taken_by = ?, taken_date = NOW() WHERE id = ?");
-            $stmt->bind_param("ssi", $status, $taken_by, $item_id);
-        } else {
-            $stmt = $conn->prepare("UPDATE inventory SET status = ?, taken_by = NULL WHERE id = ?");
-            $stmt->bind_param("si", $status, $item_id);
-        }
-
-        // Execute the statement
-        if ($stmt->execute()) {
-            // Log the action (who updated the item status and what the status is)
-            $log_message = "User \"$username\" updated item ID $item_id status to \"$status\" take by \"$taken_by\"";
-            addLog($conn, $log_message);
-
-            // Redirect to inventory dashboard or show success message
-            header("Location: item_manager.php?message=Item status updated successfully.");
-            exit();
-        } else {
-            $errors['database'] = 'Failed to update item status. Please try again.';
-        }
-    }
-}
-
-// Fetch the item details for the form (optional)
-$item_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$item = null;
-
-if ($item_id > 0) {
-    $stmt = $conn->prepare("SELECT * FROM inventory WHERE id = ?");
-    $stmt->bind_param("i", $item_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $item = $result->fetch_assoc();
-}
+$stmt = $conn->prepare("SELECT * FROM logs");
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -85,7 +23,7 @@ if ($item_id > 0) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>IT BDSI - Material Requests</title>
+    <title>IT BDSI - Activity Logs</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -112,7 +50,7 @@ if ($item_id > 0) {
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="dashboard.php">
                 <div class="sidebar-brand-icon rotate-n-15">
-                   <!-- <i class="fas fa-laugh-wink"></i> -->
+                    <!-- <i class="fas fa-laugh-wink"></i> -->
                 </div>
                 <div class="sidebar-brand-text mx-3">BDSI IT <sup>inventory</sup></div>
             </a>
@@ -147,25 +85,6 @@ if ($item_id > 0) {
                         <h6 class="collapse-header">Custom Components:</h6>
                         <a class="collapse-item" href="item_manager.php">Item Manager</a>
                         <a class="collapse-item" href="material_request.php">Material Request</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Nav Item - Utilities Collapse Menu -->
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
-                    aria-expanded="true" aria-controls="collapseUtilities">
-                    <i class="fas fa-fw fa-wrench"></i>
-                    <span>Repair</span>
-                </a>
-                <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
-                    data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Custom Utilities:</h6>
-                        <a class="collapse-item" href="utilities-color.html">Colors</a>
-                        <a class="collapse-item" href="utilities-border.html">Borders</a>
-                        <a class="collapse-item" href="utilities-animation.html">Animations</a>
-                        <a class="collapse-item" href="utilities-other.html">Other</a>
                     </div>
                 </div>
             </li>
@@ -368,16 +287,16 @@ if ($item_id > 0) {
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Profile
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="settings.php">
                                     <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Settings
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="activity_log.php">
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Activity Log
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="logout.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -393,35 +312,37 @@ if ($item_id > 0) {
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Add Item</h1>
-                    <p class="mb-4">Adding item into inventory</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800">Activity Log</h1>
+                    <p class="mb-4">All the activity logs</a>.</p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Editing Item: <?php echo $item['item_name']; ?></h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Activity Logs Table</h6>
                         </div>
                         <div class="card-body">
-                        <form action="update_item_status.php" method="post">
-                            <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">
-                            <div>
-                                <label for="status">Status:</label>
-                                <select class="form-control bg-light border-0 small" name="status" required>
-                                    <option value="available" <?php echo ($item['status'] === 'available') ? 'selected' : ''; ?>>Available</option>
-                                    <option value="taken" <?php echo ($item['status'] === 'taken') ? 'selected' : ''; ?>>Taken</option>
-                                </select>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                    <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Log Message</th>
+                                        <th>Log Date</th>
+                                    </tr>
+                                    <tbody>
+                                    <?php while ($logs = $result->fetch_assoc()): ?>
+                                        <tr>
+                                            <td><?php echo $logs['id']; ?></td>
+                                            <td><?php echo $logs['log_message']; ?></td>
+                                            <td><?php echo $logs['log_date']; ?></td>
+                                            <td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                    </tbody>
+                                </table>
                             </div>
-                            <div>
-                                <label for="taken_by">Taken By (if applicable):</label>
-                                <input class="form-control bg-light border-0 small" type="text" name="taken_by" value="<?php echo ($item['status'] === 'taken') ? $item['taken_by'] : ''; ?>">
-                            </div>
-                            <div>
-                                <button class="btn btn-primary" type="submit">Update Status</button>
-                            </div>
-                        </form>
                         </div>
                     </div>
-
 
                 </div>
                 <!-- /.container-fluid -->
