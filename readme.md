@@ -1,5 +1,9 @@
 # Inventory Manager
 Management Inventory Magang BDSI (Bohai Drilling Service Indonesia) Department IT | KULIM - LINTAS DURI DUMAI
+- Lokasi Magang => PT BDSI | Bohai Drilling Service Indonesia
+- Department => IT
+- Jurusan => Teknik Rekayasa Jaringan Telekomunikasi
+- Kampus => Politeknik Caltex Riau
 ## Main Dashboard
 ![image](https://github.com/user-attachments/assets/3469a90e-e765-4d28-bf0d-6d08c6028f95)
 ## Item Manager
