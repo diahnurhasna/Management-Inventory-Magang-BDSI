@@ -232,10 +232,33 @@ list($january,  $february, $march,     $april,
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Welcome, <?php echo $_SESSION['username']; ?></h1>
-                        <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
-                                class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
+                        <a id="downloadGraphs" href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                            <i class="fas fa-download fa-sm text-white-50"></i> Download Graph
+                        </a>
                     </div>
+                    <script>
+                        /**
+                         * triggerDownload(canvas, filename)
+                         * turns a canvas into a data‑URL and forces the browser to download it
+                         */
+                        function triggerDownload(canvas, filename) {
+                            const link = document.createElement('a');
+                            link.href = canvas.toDataURL('image/png');   // get PNG data‑url
+                            link.download = filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
 
+                        document.getElementById('downloadGraphs').addEventListener('click', function (e) {
+                            e.preventDefault();               // stay on the page
+                            const pie  = document.getElementById('myPieChart');
+                            const area = document.getElementById('myAreaChart');
+
+                            if (pie)  triggerDownload(pie,  'pie-chart.png');
+                            if (area) triggerDownload(area, 'area-chart.png');
+                        });
+                        </script>
                     <!-- Content Row -->
                     <div class="row">
 
