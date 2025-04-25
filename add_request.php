@@ -27,7 +27,7 @@ if (!isset($_SESSION['user_id'])) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $requester_name = trim($_POST['requester_name']);
-    $item = trim($_POST['item']);
+    $require_for = trim($_POST['require_for']);
     
     $errors = [];
 
@@ -35,28 +35,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($requester_name)) {
         $errors['requester_name'] = 'Requester name is required.';
     }
-    if (empty($item)) {
-        $errors['item'] = 'Item is required.';
+    if (empty($require_for)) {
+        $errors['require_for'] = 'require_for is required.';
     }
 
     // If no errors, insert request into database
     if (empty($errors)) {
-        $stmt = $conn->prepare("INSERT INTO material_request (requester_name, item) VALUES (?, ?)");
-        $stmt->bind_param("ss", $requester_name, $item);
+        // Insert into material_request table
+        $stmt = $conn->prepare("INSERT INTO material_request (requester_name, require_for) VALUES (?, ?)");
+        $stmt->bind_param("ss", $requester_name, $require_for);
         
         if ($stmt->execute()) {
+            // Get the last inserted ID
+            $last_id = $stmt->insert_id;
+    
+            // Insert into mr_item table with the retrieved ID
+            $stmt_item = $conn->prepare("INSERT INTO mr_item (mr_id) VALUES (?)");
+            $stmt_item->bind_param("i", $last_id);
+            $stmt_item->execute();
+            $stmt_item->close();
+    
             // ✅ Log the action
             $username = $conn->real_escape_string($_SESSION['username']);
-            $safe_item = $conn->real_escape_string($item);
-            $log_msg = "User '{$username}' submitted a material request for '{$safe_item}'.";
+            $safe_require_for = $conn->real_escape_string($require_for);
+            $log_msg = "User '{$username}' submitted a material request for '{$safe_require_for}'.";
             addLog($conn, $log_msg);
-
+    
             header("Location: material_request.php");
             exit();
         } else {
             $errors['general'] = 'Failed to add request. Please try again.';
         }
-    }
+        $stmt->close();
+    }    
 }
 ?>
 
@@ -260,9 +271,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <span><?php echo isset($errors['requester_name']) ? $errors['requester_name'] : ''; ?></span>
                                 </div>
                                 <div>
-                                    <label for="item">Item:</label>
-                                    <input class="form-control bg-light border-0 small" type="text" name="item" value="<?php echo isset($item) ? $item : ''; ?>">
-                                    <span><?php echo isset($errors['item']) ? $errors['item'] : ''; ?></span>
+                                    <label for="require_for">require for:</label>
+                                    <input class="form-control bg-light border-0 small" type="text" name="require_for" value="<?php echo isset($require_for) ? $require_for : ''; ?>">
+                                    <span><?php echo isset($errors['require_for']) ? $errors['require_for'] : ''; ?></span>
                                 </div>
                                 <div>
                                     <button class="btn btn-primary" type="submit">Add Request</button>

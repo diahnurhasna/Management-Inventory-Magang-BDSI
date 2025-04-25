@@ -240,15 +240,13 @@ $result = $stmt->get_result();
                             <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>No</th>
+                                    <th>#</th>
+                                    <th>No</th>
                                         <th>Ordered By</th>
+                                        <th>require for</th>
+                                        <th>aknowledge by</th>
+                                        <th>approved_by</th>
                                         <th>China Controller Name</th>
-                                        <th>Item</th>
-                                        <th>Description</th>
-                                        <th>Part Number</th>
-                                        <th>Quantity</th>
-                                        <th>Unit</th>
                                         <th>Status</th>
                                         <th>Added Date</th>
                                         <th>Last Changed</th>
@@ -256,22 +254,20 @@ $result = $stmt->get_result();
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php while ($request = $result->fetch_assoc()): ?>
+                                    <?php
+                                        $number = 1;
+                                     while ($request = $result->fetch_assoc()): ?>
                                     <tr>
                                         <form method="POST" action="">
-                                            <td><a href="mr_info.php?id=<?php echo $request['id']; ?>"><?php echo $request['id']; ?></a></td>
+                                            <td><a href="mr_info.php?id=<?php echo $request['id']; ?>"><?php echo $number++; ?></a></td>
 
 
-                                            <!-- Editable Inputs -->
-                                            <td><input type="text" name="No" value="<?php echo htmlspecialchars($request['No']); ?>" class="form-control"></td>
-                                            <td><input type="text" name="requester_name" value="<?php echo htmlspecialchars($request['requester_name']); ?>" class="form-control" style="width: 150px;"></td>
-                                            <td><input type="text" name="china_controller" value="<?php echo htmlspecialchars($request['china_controller']); ?>" class="form-control" style="width: 150px;"></td>
-                                            <td><input type="text" name="item" value="<?php echo htmlspecialchars($request['item']); ?>" class="form-control" style="width: 120px;"></td>
-
-                                            <td><input type="text" name="Description" value="<?php echo htmlspecialchars($request['Description']); ?>" class="form-control"></td>
-                                            <td><input type="text" name="pn" value="<?php echo htmlspecialchars($request['pn']); ?>" class="form-control"></td>
-                                            <td><input type="number" name="quantity" value="<?php echo htmlspecialchars($request['quantity']); ?>" class="form-control"></td>
-                                            <td><input type="text" name="unit" value="<?php echo htmlspecialchars($request['unit']); ?>" class="form-control"></td>
+                                            <td><?php echo htmlspecialchars($request['No']); ?></td>
+                                            <td><?php echo htmlspecialchars($request['requester_name']); ?></td>
+                                            <td><?php echo htmlspecialchars($request['require_for']); ?></td>
+                                            <td><?php echo htmlspecialchars($request['aknowledge_by']); ?></td>
+                                            <td><?php echo htmlspecialchars($request['approved_by']); ?></td>
+                                            <td><?php echo htmlspecialchars($request['china_controller']); ?></td>
 
                                             <!-- Status Dropdown -->
                                             <?php
@@ -283,20 +279,15 @@ $result = $stmt->get_result();
                                                     case 'out of stock': $color = 'red'; break;
                                                 }
                                             ?>
-                                            <td>
-                                                <select name="status" style="width: 120px; color: <?php echo $color; ?>;" class="form-control">
-                                                    <option value="pending" <?php if($request['status'] === 'pending') echo 'selected'; ?>>Pending</option>
-                                                    <option value="done" <?php if($request['status'] === 'done') echo 'selected'; ?>>Done</option>
-                                                    <option value="cancelled" <?php if($request['status'] === 'cancelled') echo 'selected'; ?>>Cancelled</option>
-                                                    <option value="out of stock" <?php if($request['status'] === 'out of stock') echo 'selected'; ?>>Out of Stock</option>
-                                                </select>
+                                            <td style="color: <?php echo $color; ?>;">
+                                                <?php echo $request['status'] ?>
                                             </td>
 
                                             <td>
-                                            <input type="datetime-local" name="added_date" value="<?php echo date('Y-m-d\TH:i', strtotime($request['added_date'])); ?>" class="form-control">
+                                            <?php echo date('Y-m-d H:i', strtotime($request['added_date']));?>
                                             </td>
                                             <td>
-                                            <input type="datetime-local" name="last_changed" value="<?php echo date('Y-m-d\TH:i', strtotime($request['last_changed'])); ?>" class="form-control">
+                                            <?php echo date('Y-m-d H:i', strtotime($request['last_changed'])); ?>
                                             </td>
 
 
