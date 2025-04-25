@@ -7,6 +7,38 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+if (isset($_POST['id'])) {
+    $id = intval($_POST['id']);
+    $no = intval($_POST['No']);
+    $requester_name = $_POST['requester_name'];
+    $china_controller = $_POST['china_controller'];
+    $item = $_POST['item'];
+    $description = $_POST['Description'];
+    $pn = $_POST['pn'];
+    $quantity = intval($_POST['quantity']);
+    $unit = $_POST['unit'];
+    $status = $_POST['status'];
+    $added_date = $_POST['added_date'];
+    $last_changed = $_POST['last_changed'];
+
+    $stmt = $conn->prepare("UPDATE material_request 
+        SET No=?, requester_name=?, china_controller=?, item=?, Description=?, pn=?, quantity=?, unit=?, status=?, added_date=?, last_changed=? 
+        WHERE id=?");
+
+    $stmt->bind_param("isssssisssssi", $no, $requester_name, $china_controller, $item, $description, $pn, $quantity, $unit, $status, $added_date, $last_changed, $id);
+
+    if ($stmt->execute()) {
+        header("Location: material_request.php?message=Row updated");
+        exit();
+    } else {
+        echo "Error updating row: " . $stmt->error;
+    }
+
+    $stmt->close();
+    $conn->close();
+}
+
+
 $stmt = $conn->prepare("SELECT * FROM material_request");
 $stmt->execute();
 $result = $stmt->get_result();
@@ -205,34 +237,81 @@ $result = $stmt->get_result();
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                                    <thead>
+                            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Requester Name</th>
+                                        <th>No</th>
+                                        <th>Ordered By</th>
+                                        <th>China Controller Name</th>
                                         <th>Item</th>
+                                        <th>Description</th>
+                                        <th>Part Number</th>
+                                        <th>Quantity</th>
+                                        <th>Unit</th>
                                         <th>Status</th>
                                         <th>Added Date</th>
                                         <th>Last Changed</th>
                                         <th>Action</th>
                                     </tr>
-                                    <tbody>
+                                </thead>
+                                <tbody>
                                     <?php while ($request = $result->fetch_assoc()): ?>
-                                        <tr>
-                                            <td><?php echo $request['id']; ?></td>
-                                            <td><?php echo $request['requester_name']; ?></td>
-                                            <td><?php echo $request['item']; ?></td>
-                                            <td><?php echo $request['status']; ?></td>
-                                            <td><?php echo $request['added_date']; ?></td>
-                                            <td><?php echo $request['last_changed']; ?></td>
+                                    <tr>
+                                        <form method="POST" action="">
+                                            <td><a href="mr_info.php?id=<?php echo $request['id']; ?>"><?php echo $request['id']; ?></a></td>
+
+
+                                            <!-- Editable Inputs -->
+                                            <td><input type="text" name="No" value="<?php echo htmlspecialchars($request['No']); ?>" class="form-control"></td>
+                                            <td><input type="text" name="requester_name" value="<?php echo htmlspecialchars($request['requester_name']); ?>" class="form-control" style="width: 150px;"></td>
+                                            <td><input type="text" name="china_controller" value="<?php echo htmlspecialchars($request['china_controller']); ?>" class="form-control" style="width: 150px;"></td>
+                                            <td><input type="text" name="item" value="<?php echo htmlspecialchars($request['item']); ?>" class="form-control" style="width: 120px;"></td>
+
+                                            <td><input type="text" name="Description" value="<?php echo htmlspecialchars($request['Description']); ?>" class="form-control"></td>
+                                            <td><input type="text" name="pn" value="<?php echo htmlspecialchars($request['pn']); ?>" class="form-control"></td>
+                                            <td><input type="number" name="quantity" value="<?php echo htmlspecialchars($request['quantity']); ?>" class="form-control"></td>
+                                            <td><input type="text" name="unit" value="<?php echo htmlspecialchars($request['unit']); ?>" class="form-control"></td>
+
+                                            <!-- Status Dropdown -->
+                                            <?php
+                                                $color = 'black';
+                                                switch ($request['status']) {
+                                                    case 'pending': $color = 'orange'; break;
+                                                    case 'done': $color = 'lightgreen'; break;
+                                                    case 'cancelled':
+                                                    case 'out of stock': $color = 'red'; break;
+                                                }
+                                            ?>
                                             <td>
-                                            <a href="remove_request.php?id=<?php echo $request['id']; ?>" class="btn btn-primary btn-icon-split btn-sm"><span class="text">Remove</span></a>
-                                            <a href="update_request_status.php?id=<?php echo $request['id']; ?>&status=<?php echo $request['status']; ?>" class="btn btn-primary btn-icon-split btn-sm"><span class="text">Change Status</span></a>
+                                                <select name="status" style="width: 120px; color: <?php echo $color; ?>;" class="form-control">
+                                                    <option value="pending" <?php if($request['status'] === 'pending') echo 'selected'; ?>>Pending</option>
+                                                    <option value="done" <?php if($request['status'] === 'done') echo 'selected'; ?>>Done</option>
+                                                    <option value="cancelled" <?php if($request['status'] === 'cancelled') echo 'selected'; ?>>Cancelled</option>
+                                                    <option value="out of stock" <?php if($request['status'] === 'out of stock') echo 'selected'; ?>>Out of Stock</option>
+                                                </select>
                                             </td>
-                                        </tr>
+
+                                            <td>
+                                            <input type="datetime-local" name="added_date" value="<?php echo date('Y-m-d\TH:i', strtotime($request['added_date'])); ?>" class="form-control">
+                                            </td>
+                                            <td>
+                                            <input type="datetime-local" name="last_changed" value="<?php echo date('Y-m-d\TH:i', strtotime($request['last_changed'])); ?>" class="form-control">
+                                            </td>
+
+
+                                            <!-- Action Buttons -->
+                                            <td>
+                                                <input type="hidden" name="id" value="<?php echo $request['id']; ?>">
+                                                <a href="remove_request.php?id=<?php echo $request['id']; ?>" class="btn btn-danger btn-sm">Remove</a>
+                                                <button type="submit" class="btn btn-success btn-sm">Update</button>
+                                            </td>
+                                        </form>
+                                    </tr>
                                     <?php endwhile; ?>
-                                    </tbody>
-                                </table>
+                                </tbody>
+                            </table>
+
                                 <a href="add_request.php" class="btn btn-primary btn-icon-split btn-sm"><span class="text">Add Request</span></a>
                             </div>
                         </div>

@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="card-body">
                             <form action="" method="post">
                                 <div>
-                                    <label for="requester_name">Requester Name:</label>
+                                    <label for="requester_name">Ordered By:</label>
                                     <input class="form-control bg-light border-0 small" type="text" name="requester_name" value="<?php echo isset($requester_name) ? $requester_name : ''; ?>">
                                     <span><?php echo isset($errors['requester_name']) ? $errors['requester_name'] : ''; ?></span>
                                 </div>
