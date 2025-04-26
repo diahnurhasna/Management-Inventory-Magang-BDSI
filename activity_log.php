@@ -218,7 +218,7 @@ $result = $stmt->get_result();
                                             <td><?php echo $logs['id']; ?></td>
                                             <td><?php echo $logs['log_message']; ?></td>
                                             <td><?php echo $logs['log_date']; ?></td>
-                                            <td>
+                                            
                                         </tr>
                                     <?php endwhile; ?>
                                     </tbody>

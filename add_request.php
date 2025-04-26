@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 session_start();
 require 'db.php';
 function addLog($conn, $message) {
@@ -49,11 +52,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Get the last inserted ID
             $last_id = $stmt->insert_id;
     
-            // Insert into mr_item table with the retrieved ID
-            $stmt_item = $conn->prepare("INSERT INTO mr_item (mr_id) VALUES (?)");
-            $stmt_item->bind_param("i", $last_id);
-            $stmt_item->execute();
-            $stmt_item->close();
+            // Now insert each item row into mr_item
+            if (!empty($_POST['item'])) {
+                $items = $_POST['item'];
+                $descriptions = $_POST['description'];
+                $pns = $_POST['pn'];
+                $quantities = $_POST['quantity'];
+                $units = $_POST['unit'];
+    
+                // Prepare the insert statement once
+                $stmt_item = $conn->prepare("INSERT INTO mr_item (mr_id, item, description, pn, quantity, unit) VALUES (?, ?, ?, ?, ?, ?)");
+    
+                // Loop through each item row
+                for ($i = 0; $i < count($items); $i++) {
+                    // Skip empty rows if necessary
+                    if (empty($items[$i]) && empty($descriptions[$i]) && empty($pns[$i])) {
+                        continue;
+                    }
+    
+                    $item = $items[$i];
+                    $description = $descriptions[$i];
+                    $pn = $pns[$i];
+                    $quantity = $quantities[$i];
+                    $unit = $units[$i];
+    
+                    $stmt_item->bind_param("isssis", $last_id, $item, $description, $pn, $quantity, $unit);
+                    $stmt_item->execute();
+                }
+    
+                $stmt_item->close();
+            }
     
             // ✅ Log the action
             $username = $conn->real_escape_string($_SESSION['username']);
@@ -63,11 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
             header("Location: material_request.php");
             exit();
+    
         } else {
             $errors['general'] = 'Failed to add request. Please try again.';
         }
         $stmt->close();
-    }    
+    }
+    
 }
 ?>
 
@@ -276,7 +306,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <span><?php echo isset($errors['require_for']) ? $errors['require_for'] : ''; ?></span>
                                 </div>
                                 <div>
-                                    <button class="btn btn-primary" type="submit">Add Request</button>
+                                <table id="itemsTable" class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Description</th>
+            <th>P/N</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Initial row -->
+        <tr>
+            <td><input type="text" name="item[]"></td>
+            <td><input type="text" name="description[]"></td>
+            <td><input type="text" name="pn[]"></td>
+            <td><input type="number" name="quantity[]"></td>
+            <td><input type="text" name="unit[]"></td>
+            <td>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+
+
+<script>
+function addRow() {
+    const tableBody = document.getElementById("itemsTable").getElementsByTagName('tbody')[0];
+    const newRow = document.createElement('tr');
+
+    newRow.innerHTML = `
+        <td><input type="text" name="item[]"></td>
+        <td><input type="text" name="description[]"></td>
+        <td><input type="text" name="pn[]"></td>
+        <td><input type="number" name="quantity[]"></td>
+        <td><input type="text" name="unit[]"></td>
+        <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">Remove</button></td>
+    `;
+
+    tableBody.appendChild(newRow);
+}
+
+function removeRow(button) {
+    button.closest('tr').remove();
+}
+</script>
+
+
+
+                                </div>
+                                <div>
+                                    <button class="btn btn-primary btn-sm" type="submit">Add Request</button>
+                                    <button class="btn btn-primary btn-sm" type="button" onclick="addRow()">Add Row</button>
+
                                 </div>
                                 </form>
                         </div>

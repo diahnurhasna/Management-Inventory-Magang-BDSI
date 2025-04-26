@@ -255,11 +255,11 @@ $result = $stmt->get_result();
                                 </thead>
                                 <tbody>
                                     <?php
-                                        $number = 1;
+                                        $count = 1;
                                      while ($request = $result->fetch_assoc()): ?>
                                     <tr>
                                         <form method="POST" action="">
-                                            <td><a href="mr_info.php?id=<?php echo $request['id']; ?>"><?php echo $number++; ?></a></td>
+                                            <td><a href="mr_info.php?id=<?php echo $request['id']; ?>"><?php echo $count++; ?></a></td>
 
 
                                             <td><?php echo htmlspecialchars($request['No']); ?></td>
@@ -295,7 +295,6 @@ $result = $stmt->get_result();
                                             <td>
                                                 <input type="hidden" name="id" value="<?php echo $request['id']; ?>">
                                                 <a href="remove_request.php?id=<?php echo $request['id']; ?>" class="btn btn-danger btn-sm">Remove</a>
-                                                <button type="submit" class="btn btn-success btn-sm">Update</button>
                                             </td>
                                         </form>
                                     </tr>

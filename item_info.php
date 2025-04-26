@@ -213,7 +213,7 @@ $item = $result->fetch_assoc();
 
                     <!-- Page Heading -->
                     <h1 class="h3 mb-2 text-gray-800">Inventory Item Info</h1>
-                    <p class="mb-4">Item Information — ID #<?php echo $item['id']; ?></a>.</p>
+                    <p class="mb-4">Item Information</a>.</p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
@@ -240,6 +240,7 @@ $item = $result->fetch_assoc();
 
                             <br>
                             <a href="item_manager.php" class="btn btn-primary">Back to Items</a>
+                            <a href="edit_item.php?id=<?php echo $item['id']; ?>" class="btn btn-success">Edit</a>
                             </div>
                         </div>
                     </div>

@@ -7,8 +7,14 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Handle Update request
-if (isset($_POST['id'])) {
+// Check if ID is passed
+if (!isset($_GET['id']) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo "No item ID specified.";
+    exit();
+}
+
+// Handle POST: Update item
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = intval($_POST['id']);
     $item_name = $_POST['item_name'];
     $description = $_POST['description'];
@@ -17,32 +23,31 @@ if (isset($_POST['id'])) {
     $taken_by = $_POST['taken_by'];
     $taken_date = $_POST['taken_date'];
 
-    $stmt = $conn->prepare("UPDATE inventory SET item_name=?, description=?, status=?, added_date=?, taken_by=?, taken_date=? WHERE id=?");
+    $stmt = $conn->prepare("UPDATE inventory SET item_name = ?, description = ?, status = ?, added_date = ?, taken_by = ?, taken_date = ? WHERE id = ?");
     $stmt->bind_param("ssssssi", $item_name, $description, $status, $added_date, $taken_by, $taken_date, $id);
 
     if ($stmt->execute()) {
-        header("Location: item_manager.php?message=Item updated");
+        header("Location: edit_item.php?id=" . $_GET['id']);
         exit();
     } else {
-        echo "Error updating item: " . $stmt->error;
+        echo "Failed to update item.";
     }
-
-    $stmt->close();
 }
 
-// Fetch inventory list
-$query = "SELECT * FROM inventory";
-if (isset($_GET['status_filter']) && !empty($_GET['status_filter'])) {
-    $status_filter = $_GET['status_filter'];
-    $query .= " WHERE status = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $status_filter);
-} else {
-    $stmt = $conn->prepare($query);
-}
+// Fetch current data for display (for GET or after failed POST)
+$id = isset($_GET['id']) ? intval($_GET['id']) : intval($_POST['id']);
 
+$stmt = $conn->prepare("SELECT * FROM inventory WHERE id = ?");
+$stmt->bind_param("i", $id);
 $stmt->execute();
 $result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    echo "Item not found.";
+    exit();
+}
+
+$item = $result->fetch_assoc();
 ?>
 
 
@@ -58,7 +63,7 @@ $result = $stmt->get_result();
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>IT BDSI - Item Manager</title>
+    <title>IT BDSI - Item Information</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -123,8 +128,6 @@ $result = $stmt->get_result();
                     </div>
                 </div>
             </li>
-
-            
             <!-- Sidebar Toggler (Sidebar) -->
             <div class="text-center d-none d-md-inline">
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
@@ -190,7 +193,7 @@ $result = $stmt->get_result();
                             </div>
                         </li>
 
-                        
+                       
 
                         <!-- Nav Item - User Information -->
                         <li class="nav-item dropdown no-arrow">
@@ -232,73 +235,72 @@ $result = $stmt->get_result();
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Item Manager</h1>
-                    <p class="mb-4">Item List in our inventory in and out</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800">Inventory Item Info</h1>
+                    <p class="mb-4">Item Editing</a>.</p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Item Manager table</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Edit Item Information</h6>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                            <label for="status_filter">Filter by Status: </label>
-                                <form method="GET" action="" style="display: flex; align-items: center;">
-                                    <select style="width: 200px;" class="form-control border-50 bg-light" name="status_filter" id="status_filter">
-                                        <option value="">All</option>
-                                        <option value="taken" <?php echo (isset($_GET['status_filter']) && $_GET['status_filter'] === 'taken') ? 'selected' : ''; ?>>Taken</option>
-                                        <option value="available" <?php echo (isset($_GET['status_filter']) && $_GET['status_filter'] === 'available') ? 'selected' : ''; ?>>Available</option>
-                                    </select>
-                                    <button class="btn btn-primary" type="submit" style="margin-left: 10px;">Filter</button>
-                                </form>
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                                    <thead>
+                                <form method="post" action="">
+                                    <table class="table table-bordered" cellpadding="10">
                                         <tr>
-                                            <th>#</th>
-                                            <th>Item Name</th>
-                                            <th>Description</th>
-                                            <th>Status</th>
-                                            <th>Added Date</th>
-                                            <th>Taken By</th>
-                                            <th>Taken Date</th>
-                                            <th>Actions</th>
+                                            <th>ID</th>
+                                            <td>
+                                                <input type="text" name="id" value="<?php echo $item['id']; ?>" readonly class="form-control">
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $count = 1; 
-                                         while ($item = $result->fetch_assoc()): ?>
-                                            <tr>
-                                                <form method="POST" action="">
-                                                    <td><a href="item_info.php?id=<?php echo $item['id']; ?>"><?php echo $count++; ?></a></td>
+                                        <tr>
+                                            <th>Item Name</th>
+                                            <td>
+                                                <input type="text" name="item_name" value="<?php echo htmlspecialchars($item['item_name']); ?>" class="form-control">
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Description</th>
+                                            <td>
+                                                <textarea name="description" class="form-control"><?php echo htmlspecialchars($item['description']); ?></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Status</th>
+                                            <td>
+                                                <select name="status" class="form-control">
+                                                    <option value="available" <?php if($item['status'] === 'available') echo 'selected'; ?>>Available</option>
+                                                    <option value="taken" <?php if($item['status'] === 'taken') echo 'selected'; ?>>Taken</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Added Date</th>
+                                            <td>
+                                                <input type="datetime-local" name="added_date" value="<?php echo date('Y-m-d\TH:i', strtotime($item['added_date'])); ?>" class="form-control">
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Taken By</th>
+                                            <td>
+                                                <input type="text" name="taken_by" value="<?php echo htmlspecialchars($item['taken_by']); ?>" class="form-control">
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Taken Date</th>
+                                            <td>
+                                                <input type="datetime-local" name="taken_date" value="<?php echo date('Y-m-d\TH:i', strtotime($item['taken_date'])); ?>" class="form-control">
+                                            </td>
+                                        </tr>
+                                    </table>
 
-                                                    <td><?php echo htmlspecialchars($item['item_name']); ?></td>
-                                                    
-                                                    <td><?php echo htmlspecialchars($item['description']); ?></td>
-
-                                                    <td>
-                                                        <?php echo $item['status']; ?>
-                                                    </td>
-
-                                                    <td><?php echo date('Y-m-d H:i', strtotime($item['added_date'])); ?></td>
-
-                                                    <td><?php echo htmlspecialchars($item['taken_by']); ?></td>
-
-                                                    <td><?php echo ($item['taken_date'] ? date('Y-m-d H:i', strtotime($item['taken_date'])) : ''); ?></td>
-
-                                                    <td>
-                                                        <input type="hidden" name="id" value="<?php echo $item['id']; ?>">
-                                                        <a href="remove_item.php?id=<?php echo $item['id']; ?>" class="btn btn-danger btn-sm">Remove</a>
-                                                    </td>
-                                                </form>
-                                            </tr>
-                                        <?php endwhile; ?>
-                                    </tbody>
-                                </table>
-                                <a href="add_item.php" class="btn btn-primary btn-icon-split btn-sm"><span class="text">Add Item</span></a>
+                                    <button type="submit" class="btn btn-success">Update Item</button>
+                                    <a href=<?php echo "item_info.php?id=" . $item['id']; ?> class="btn btn-primary">Back</a>
+                                </form>
                             </div>
                         </div>
                     </div>
+
 
                 </div>
                 <!-- /.container-fluid -->
@@ -310,7 +312,7 @@ $result = $stmt->get_result();
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; BDSI IT Department 2025</span>
+                    <span>Copyright &copy; BDSI IT Department 2025</span>
                     </div>
                 </div>
             </footer>

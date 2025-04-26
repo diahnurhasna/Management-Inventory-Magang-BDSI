@@ -18,6 +18,11 @@ $stmt = $conn->prepare("SELECT * FROM material_request WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $result = $stmt->get_result();
+// Fetch associated items from mr_item table
+$item_stmt = $conn->prepare("SELECT * FROM mr_item WHERE mr_id = ?");
+$item_stmt->bind_param("i", $id);
+$item_stmt->execute();
+$item_result = $item_stmt->get_result();
 
 if ($result->num_rows === 0) {
     echo "Material request not found.";
@@ -211,7 +216,7 @@ $request = $result->fetch_assoc();
 
                     <!-- Page Heading -->
                     <h1 class="h3 mb-2 text-gray-800">Material Request Info</h1>
-                    <p class="mb-4">Material Request Details — ID #<?php echo $request['id']; ?></a>.</p>
+                    <p class="mb-4">Material Request Details</a>.</p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
@@ -254,7 +259,41 @@ $request = $result->fetch_assoc();
                                     <tr><th>Last Changed</th><td><?php echo $request['last_changed']; ?></td></tr>
                                 </tbody>
                             </table>
+                            <h5 class="mt-4 mb-3">Items</h5>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Description</th>
+                                        <th>Part Number</th>
+                                        <th>Quantity</th>
+                                        <th>Unit</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if ($item_result->num_rows > 0): ?>
+                                        <?php while ($item = $item_result->fetch_assoc()): ?>
+                                            <tr>
+                                                <td><?php echo htmlspecialchars($item['item']); ?></td>
+                                                <td><?php echo htmlspecialchars($item['description']); ?></td>
+                                                <td><?php echo htmlspecialchars($item['pn']); ?></td>
+                                                <td><?php echo htmlspecialchars($item['quantity']); ?></td>
+                                                <td><?php echo htmlspecialchars($item['unit']); ?></td>
+                                                <td><?php echo htmlspecialchars($item['status']); ?></td>
+                                            </tr>
+                                        <?php endwhile; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="6" class="text-center">No items found for this request.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+
                             <a href="material_request.php" class="btn btn-secondary">Back to List</a>
+                            <a href="edit_request.php?id=<?php echo $request['id']; ?>" class="btn btn-success">Edit</a>
+
                             </div>
                         </div>
                     </div>
