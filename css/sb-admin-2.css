@@ -25,7 +25,7 @@
   --gray: #858796;
   --gray-dark: #5a5c69;
   --primary: #4e73df;
-  --secondary: #858796;
+  --secondary: #ff414b;
   --success: #1cc88a;
   --info: #36b9cc;
   --warning: #f6c23e;
@@ -4562,7 +4562,7 @@ input[type="button"].btn-block {
 
 .card-footer {
   padding: 0.75rem 1.25rem;
-  background-color: #f8f9fc;
+  background-color: #000000;
   border-top: 1px solid #e3e6f0;
 }
 
