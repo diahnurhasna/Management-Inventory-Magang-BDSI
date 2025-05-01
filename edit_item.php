@@ -22,16 +22,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $added_date = $_POST['added_date'];
     $taken_by = $_POST['taken_by'];
     $taken_date = $_POST['taken_date'];
+    $item_value = $_POST['item_value'];
+    $stmt = $conn->prepare("UPDATE inventory SET item_name = ?, description = ?, status = ?, added_date = ?, taken_by = ?, taken_date = ?, value = ? WHERE id = ?");
+$stmt->bind_param("ssssssii", $item_name, $description, $status, $added_date, $taken_by, $taken_date, $item_value, $id);
 
-    $stmt = $conn->prepare("UPDATE inventory SET item_name = ?, description = ?, status = ?, added_date = ?, taken_by = ?, taken_date = ? WHERE id = ?");
-    $stmt->bind_param("ssssssi", $item_name, $description, $status, $added_date, $taken_by, $taken_date, $id);
+if ($stmt->execute()) {
+    echo "Item updated successfully."; // This will let you know if it's updating correctly
+    header("Location: edit_item.php?id=" . $_GET['id']);
+    exit();
+} else {
+    // Check for SQL errors
+    echo "Failed to update item. Error: " . $stmt->error;
+}
 
-    if ($stmt->execute()) {
-        header("Location: edit_item.php?id=" . $_GET['id']);
-        exit();
-    } else {
-        echo "Failed to update item.";
-    }
 }
 
 // Fetch current data for display (for GET or after failed POST)
@@ -157,6 +160,12 @@ $item = $result->fetch_assoc();
                                             <th>Taken Date</th>
                                             <td>
                                                 <input type="datetime-local" name="taken_date" value="<?php echo date('Y-m-d\TH:i', strtotime($item['taken_date'])); ?>" class="form-control">
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Value</th>
+                                            <td>
+                                                <input type="text" name="item_value" value="<?php echo htmlspecialchars($item['value']); ?>" class="form-control">
                                             </td>
                                         </tr>
                                     </table>

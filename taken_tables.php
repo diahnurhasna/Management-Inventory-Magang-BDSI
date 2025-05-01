@@ -1,32 +1,16 @@
 <?php
 session_start();
 require 'db.php';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
 
-// Check if ID is passed
-if (!isset($_GET['id'])) {
-    echo "No item ID specified.";
-    exit();
-}
 
-$id = intval($_GET['id']);
-
-// Fetch item info
-$stmt = $conn->prepare("SELECT * FROM inventory WHERE id = ?");
-$stmt->bind_param("i", $id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
-    echo "Item not found.";
-    exit();
-}
-
-$item = $result->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
@@ -40,7 +24,7 @@ $item = $result->fetch_assoc();
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>IT BDSI - Item Information</title>
+    <title>IT BDSI - Item Manager</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -79,35 +63,59 @@ $item = $result->fetch_assoc();
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Inventory Item Info</h1>
-                    <p class="mb-4">Item Information</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800">Item Manager</h1>
+                    <p class="mb-4">Taken Items</a>.</p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Item Detailed Information</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Item Manager table</h6>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                            <table class="table table-bordered" cellpadding="10">
-                                <tr><th>ID</th><td><?php echo $item['id']; ?></td></tr>
-                                <tr><th>Item Name</th><td><?php echo $item['item_name']; ?></td></tr>
-                                <tr><th>Description</th><td><?php echo $item['description']; ?></td></tr>
-                                <tr><th>Value</th><td><?php echo $item['description']; ?></td></tr>
-                                <?php
-                                // Color for status
-                                $color = ($item['status'] === 'taken') ? 'red' : 'lightgreen';
-                                ?>
-                                <tr><th>Status</th><td style="color: <?php echo $color; ?>;"><?php echo $item['status']; ?></td></tr>
-                                <tr><th>Added Date</th><td><?php echo $item['added_date']; ?></td></tr>
-                                <tr><th>Taken By</th><td><?php echo $item['taken_by']; ?></td></tr>
-                                <tr><th>Taken Date</th><td><?php echo $item['taken_date']; ?></td></tr>
-                                <tr><th>value</th><td><?php echo $item['value']; ?></td></tr>
-                            </table>
+                            <label for="status_filter">Filter by Status: </label>
+                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Item Name</th>
+                                            <th>Taken By</th>
+                                            <th>Taken Date</th>
+                                            <th>Taken Value</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    <?php
+                                    $query = "SELECT * FROM taken_values";
+                                    $stmt = mysqli_query($conn, $query);
+                                    $count = 1;
 
-                            <br>
-                            <a href="item_manager.php" class="btn btn-primary">Back to Items</a>
-                            <a href="edit_item.php?id=<?php echo $item['id']; ?>" class="btn btn-success">Edit</a>
+                                    if ($stmt) { // Check if the query was successful
+                                        while ($row = mysqli_fetch_assoc($stmt)): ?>
+                                            <tr>
+                                                <form method="POST" action="">
+                                                    <td><a href="item_info.php?id=<?php echo $row['id']; ?>"><?php echo $count++; ?></a></td>
+                                                    <td><?php echo htmlspecialchars($row['item_name']); ?></td>
+                                                    <td><?php echo htmlspecialchars($row['taken_by']); ?></td>
+                                                    <td><?php echo date('Y-m-d H:i', strtotime($row['taken_date'])); ?></td>
+                                                    <td><?php echo $row['taken_value']; ?></td>
+                                                    <td>
+                                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                                        <a href="remove_take_log.php?id=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm">Remove</a>
+                                                    </td>
+                                                </form>
+                                            </tr>
+                                        <?php endwhile;
+                                        mysqli_free_result($stmt); // Free the result set
+                                    } else {
+                                        echo "Error executing query: " . mysqli_error($conn);
+                                    }
+                                    mysqli_close($conn);
+                                    ?>
+                                    </tbody>
+                                </table>
+                               
                             </div>
                         </div>
                     </div>

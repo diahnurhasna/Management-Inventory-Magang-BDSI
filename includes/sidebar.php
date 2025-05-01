@@ -37,6 +37,7 @@
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Custom Components:</h6>
                         <a class="collapse-item" href="item_manager.php">Item Manager</a>
+                        <a class="collapse-item" href="taken_tables.php">Taken Items</a>
                         <a class="collapse-item" href="material_request.php">Material Request</a>
                     </div>
                 </div>
