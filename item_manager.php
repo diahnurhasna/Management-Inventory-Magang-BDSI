@@ -180,7 +180,7 @@ $result = $stmt->get_result();
                                             <th>Value</th>
                                             <th>Status</th>
                                             <th>Added Date</th>
-                                            <th>Taken By</th>
+                                            <th>Last Taken By</th>
                                             <th>Taken Date</th>
                                             <th>Actions</th>
                                         </tr>
@@ -201,11 +201,18 @@ $result = $stmt->get_result();
                                                     <td><?php echo date('Y-m-d H:i', strtotime($item['added_date'])); ?></td>
                                                     <td><?php echo htmlspecialchars($item['taken_by']); ?></td>
                                                     <td><?php echo ($item['taken_date'] ? date('Y-m-d H:i', strtotime($item['taken_date'])) : ''); ?></td>
-                                                    <td>
+                                                    <td width="120px">
                                                         <input type="hidden" name="take_item_id" value="<?php echo $item['id']; ?>">
                                                         <button type="button" class="btn btn-success btn-sm take-button" data-item-name="<?php echo htmlspecialchars($item['item_name']); ?>" data-item-id="<?php echo $item['id']; ?>">
                                                             Take
                                                         </button>
+                                                        <button type="button" 
+                                                        class="btn btn-danger btn-sm remove-button"
+                                                        data-item-id="<?php echo $item['id']; ?>"
+                                                        data-item-name="<?php echo htmlspecialchars($item['item_name']); ?>">
+                                                        Remove
+                                                    </button>
+
                                                     </td>
                                                 </form>
                                             </tr>
@@ -292,6 +299,26 @@ $result = $stmt->get_result();
 
             $('#takeItemModal').on('hidden.bs.modal', function() {
                 $('#takeItemForm')[0].reset();
+            });
+        });
+        $('.remove-button').click(function() {
+            var itemId = $(this).data('item-id');
+            var itemName = $(this).data('item-name');
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This will remove "' + itemName + '" from the inventory!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, remove it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect to remove_item.php?id=
+                    window.location.href = "remove_item.php?id=" + itemId;
+                }
             });
         });
     </script>

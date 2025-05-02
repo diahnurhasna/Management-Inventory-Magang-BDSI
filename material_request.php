@@ -54,7 +54,7 @@ $result = $stmt->get_result();
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>IT BDSI - Material Requests</title>
 
     <!-- Custom fonts for this template -->
@@ -161,8 +161,8 @@ $result = $stmt->get_result();
                                             <!-- Action Buttons -->
                                             <td>
                                                 <input type="hidden" name="id" value="<?php echo $request['id']; ?>">
-                                                <a href="remove_request.php?id=<?php echo $request['id']; ?>" class="btn btn-danger btn-sm">Remove</a>
-                                            </td>
+                                                <button type="button" class="btn btn-danger btn-sm" onclick="confirmRemove(<?php echo $request['id']; ?>)">Remove</button>
+                                                </td>
                                         </form>
                                     </tr>
                                     <?php endwhile; ?>
@@ -233,5 +233,23 @@ $result = $stmt->get_result();
     <script src="js/demo/datatables-demo.js"></script>
 
 </body>
+<script>
+function confirmRemove(id) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "This will permanently remove the request!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e74a3b',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, remove it!',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = 'remove_request.php?id=' + id;
+        }
+    })
+}
+</script>
 
 </html>
