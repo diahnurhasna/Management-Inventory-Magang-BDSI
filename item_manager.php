@@ -192,24 +192,24 @@ $result = $stmt->get_result();
                                             <tr>
                                                 <form method="POST" action="">
                                                     <td><a href="item_info.php?id=<?php echo $item['id']; ?>"><?php echo $count++; ?></a></td>
-                                                    <td><?php echo htmlspecialchars($item['item_name']); ?></td>
-                                                    <td><?php echo htmlspecialchars($item['description']); ?></td>
-                                                    <td><?php echo htmlspecialchars($item['value']); ?></td>
+                                                    <td><?php echo htmlspecialchars($item['item_name'] ?? 'N/A'); ?></td>
+                                                    <td><?php echo htmlspecialchars($item['description'] ?? 'N/A'); ?></td>
+                                                    <td><?php echo htmlspecialchars($item['value'] ?? 'N/A'); ?></td>
                                                     <td>
                                                         <?php echo $item['status']; ?>
                                                     </td>
-                                                    <td><?php echo date('Y-m-d H:i', strtotime($item['added_date'])); ?></td>
-                                                    <td><?php echo htmlspecialchars($item['taken_by']); ?></td>
-                                                    <td><?php echo ($item['taken_date'] ? date('Y-m-d H:i', strtotime($item['taken_date'])) : ''); ?></td>
+                                                    <td><?php echo date('Y-m-d H:i', strtotime($item['added_date'] ?? 'N/A')); ?></td>
+                                                    <td><?php echo htmlspecialchars($item['taken_by'] ?? 'N/A'); ?></td>
+                                                    <td><?php echo ($item['taken_date'] ? date('Y-m-d H:i', strtotime($item['taken_date'] ?? 'N/A')) : ''); ?></td>
                                                     <td width="120px">
                                                         <input type="hidden" name="take_item_id" value="<?php echo $item['id']; ?>">
-                                                        <button type="button" class="btn btn-success btn-sm take-button" data-item-name="<?php echo htmlspecialchars($item['item_name']); ?>" data-item-id="<?php echo $item['id']; ?>">
+                                                        <button type="button" class="btn btn-success btn-sm take-button" data-item-name="<?php echo htmlspecialchars($item['item_name']?? 'N/A'); ?>" data-item-id="<?php echo $item['id']; ?>">
                                                             Take
                                                         </button>
                                                         <button type="button" 
                                                         class="btn btn-danger btn-sm remove-button"
                                                         data-item-id="<?php echo $item['id']; ?>"
-                                                        data-item-name="<?php echo htmlspecialchars($item['item_name']); ?>">
+                                                        data-item-name="<?php echo htmlspecialchars($item['item_name'] ?? 'N/A'); ?>">
                                                         Remove
                                                     </button>
 
