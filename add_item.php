@@ -31,6 +31,7 @@ if (!isset($_SESSION['user_id'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $item_name = trim($_POST['item_name']);
     $description = trim($_POST['description']);
+    $item_unit = trim($_POST['item_unit']);
     $item_value = trim($_POST['item_value']);
     $errors = [];
 
@@ -46,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // If there are no errors, proceed to insert the item into the database
     if (empty($errors)) {
         // Prepare the SQL statement
-        $stmt = $conn->prepare("INSERT INTO inventory (item_name, description, value) VALUES (?, ?, ?)");
-        $stmt->bind_param("ssi", $item_name, $description, $item_value);
+        $stmt = $conn->prepare("INSERT INTO inventory (item_name, description, value, unit) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssis", $item_name, $description, $item_value, $item_unit);
 
         if ($stmt->execute()) {
             // ✅ Log the action
@@ -141,6 +142,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <label for="item_value">Item Value:</label>
                                 <input type="number" class="form-control bg-light border-0 small" name="item_value"><?php echo isset($item_value) ? htmlspecialchars($item_value) : ''; ?></input>
                                 <span><?php echo isset($errors['item_value']) ? $errors['item_value'] : ''; ?></span>
+                            </div>
+                            <div>
+                                <label for="item_unit">Item Unit:</label>
+                                <input type="text" class="form-control bg-light border-0 small" name="item_unit"><?php echo isset($item_unit) ? htmlspecialchars($item_value) : ''; ?></input>
+                                <span><?php echo isset($errors['item_unit']) ? $errors['item_unit'] : ''; ?></span>
                             </div>
                             <div>
                                 <button class="btn btn-primary" type="submit">Add Item</button>
