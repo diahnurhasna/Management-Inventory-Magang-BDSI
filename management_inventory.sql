@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1deb3
+-- version 5.2.1deb1+deb12u1
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 03, 2025 at 07:24 AM
--- Server version: 10.11.11-MariaDB-0ubuntu0.24.04.2
--- PHP Version: 8.3.6
+-- Generation Time: Jun 03, 2025 at 07:51 AM
+-- Server version: 10.11.11-MariaDB-0+deb12u1
+-- PHP Version: 8.2.28
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -71,7 +71,13 @@ INSERT INTO `logs` (`id`, `log_message`, `log_time`, `user_id`) VALUES
 (2, 'User \"admin\" successfully logged in.', '2025-06-02 06:42:53', NULL),
 (3, 'User \'admin\' added new inventory item: \'Belden UTP 305M\'.', '2025-06-02 06:43:30', NULL),
 (4, 'User \'admin\' added new inventory item: \'BELDEN UTP 305M\'.', '2025-06-02 06:47:49', NULL),
-(5, 'User \'admin\' added new inventory item: \'UTP 100CM\'.', '2025-06-02 06:59:23', NULL);
+(5, 'User \'admin\' added new inventory item: \'UTP 100CM\'.', '2025-06-02 06:59:23', NULL),
+(6, 'User \"admin\" successfully logged in.', '2025-06-03 07:35:00', NULL),
+(7, 'User \"admin\" successfully logged in.', '2025-06-03 07:37:17', NULL),
+(8, 'User \"admin\" successfully logged in.', '2025-06-03 07:40:45', NULL),
+(9, 'INSERT INTO logs (log_message) VALUES (\'User \"admin\" updated their profile picture\')', '2025-06-03 07:41:37', NULL),
+(10, 'User \"admin\" successfully logged in.', '2025-06-03 07:46:10', NULL),
+(11, 'User \'admin\' submitted a material request for \'81\'.', '2025-06-03 07:50:08', NULL);
 
 -- --------------------------------------------------------
 
@@ -93,6 +99,13 @@ CREATE TABLE `material_request` (
   `user_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `material_request`
+--
+
+INSERT INTO `material_request` (`id`, `No`, `requester_name`, `require_for`, `china_controller`, `aknowledge_by`, `approved_by`, `status`, `request_date`, `last_changed`, `user_id`) VALUES
+(8, NULL, 'IT Department', '81', NULL, NULL, NULL, 'pending', '2025-06-03 07:50:07', '2025-06-03 07:50:07', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -102,13 +115,21 @@ CREATE TABLE `material_request` (
 CREATE TABLE `mr_item` (
   `id` int(11) NOT NULL,
   `mr_id` int(11) NOT NULL,
-  `item_name` varchar(255) NOT NULL,
+  `item` text NOT NULL,
+  `item_name` varchar(255) NOT NULL DEFAULT '',
   `description` text DEFAULT NULL,
   `pn` varchar(100) DEFAULT NULL,
   `quantity` int(11) NOT NULL,
   `unit` varchar(50) DEFAULT NULL,
   `inventory_item_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `mr_item`
+--
+
+INSERT INTO `mr_item` (`id`, `mr_id`, `item`, `item_name`, `description`, `pn`, `quantity`, `unit`, `inventory_item_id`) VALUES
+(1, 8, 'Laptop Asus Slim', '', 'Intel Core i7 13th Gen', '-', 3, '3', NULL);
 
 -- --------------------------------------------------------
 
@@ -172,7 +193,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `profile_path`, `email`, `created_at`) VALUES
-(1, 'admin', '$2a$12$FdLE5DERDC2hBBgB4Vois.aq6s9R0u53Jx3ztaI7426BDkFodkgdC', '', 'admin@example.com', '2025-06-02 06:42:47');
+(1, 'admin', '$2a$12$FdLE5DERDC2hBBgB4Vois.aq6s9R0u53Jx3ztaI7426BDkFodkgdC', 'uploads/profile/1748936497_42730-unknow.png', 'admin@example.com', '2025-06-02 06:42:47');
 
 --
 -- Indexes for dumped tables
@@ -240,19 +261,19 @@ ALTER TABLE `inventory`
 -- AUTO_INCREMENT for table `logs`
 --
 ALTER TABLE `logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `material_request`
 --
 ALTER TABLE `material_request`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `mr_item`
 --
 ALTER TABLE `mr_item`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `settings`
