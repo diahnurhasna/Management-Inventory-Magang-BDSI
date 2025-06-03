@@ -162,6 +162,7 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `profile_path` text NOT NULL,
   `email` varchar(100) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -170,8 +171,8 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `email`, `created_at`) VALUES
-(1, 'admin', '$2a$12$FdLE5DERDC2hBBgB4Vois.aq6s9R0u53Jx3ztaI7426BDkFodkgdC', 'admin@example.com', '2025-06-02 06:42:47');
+INSERT INTO `users` (`id`, `username`, `password`, `profile_path`, `email`, `created_at`) VALUES
+(1, 'admin', '$2a$12$FdLE5DERDC2hBBgB4Vois.aq6s9R0u53Jx3ztaI7426BDkFodkgdC', '', 'admin@example.com', '2025-06-02 06:42:47');
 
 --
 -- Indexes for dumped tables
