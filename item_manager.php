@@ -178,7 +178,8 @@ $result = $stmt->get_result();
                                             <th>Item Name</th>
                                             <th>Description</th>
                                             <th>Value</th>
-                                            <th>Status</th>
+                                            <th>Unit</th>
+                                            <th>Ever Taken</th>
                                             <th>Added Date</th>
                                             <th>Last Taken By</th>
                                             <th>Taken Date</th>
@@ -195,8 +196,9 @@ $result = $stmt->get_result();
                                                     <td><?php echo htmlspecialchars($item['item_name'] ?? 'N/A'); ?></td>
                                                     <td><?php echo htmlspecialchars($item['description'] ?? 'N/A'); ?></td>
                                                     <td><?php echo htmlspecialchars($item['value'] ?? 'N/A'); ?></td>
+                                                    <td><?php echo htmlspecialchars($item['unit'] ?? 'N/A'); ?></td>
                                                     <td>
-                                                        <?php echo $item['status']; ?>
+                                                        <?php echo ($item['status'] == 'taken' ? '✅' : '❌'); ?>
                                                     </td>
                                                     <td><?php echo date('Y-m-d H:i', strtotime($item['added_date'] ?? 'N/A')); ?></td>
                                                     <td><?php echo htmlspecialchars($item['taken_by'] ?? 'N/A'); ?></td>
